@@ -6,39 +6,40 @@ their collaboration using the ADK's SequentialAgent pattern.
 import os
 import logging
 import google.cloud.logging
+import google.auth
 
-from callback_logging import log_query_to_model, log_model_response
-from dotenv import load_dotenv
+import datetime
+from zoneinfo import ZoneInfo
 
-from google.adk import Agent
+from google.adk.agents import Agent
+from google.adk.apps import App
+from google.adk.models import Gemini
+from google.genai import types
+from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
+from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
+from a2a.types import AgentCard
+from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.adk.agents import SequentialAgent, LoopAgent, ParallelAgent
 from google.adk.tools.tool_context import ToolContext
-from google.adk.tools.langchain_tool import LangchainTool  # import
 from google.genai import types
-from google.adk.a2a.utils.agent_to_a2a import to_a2a
-from a2a.types import AgentCard
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
-
-# Read the public IP from the file created by the init container.
-try:
-    with open('/ip/public_ip', 'r') as f:
-        public_ip = f.read().strip()
-    public_url = f"http://{public_ip}"
-except FileNotFoundError:
-    public_url = "http://localhost:8080" # Fallback for local development
+from google.adk.tools.langchain_tool import LangchainTool
 
 
 cloud_logging_client = google.cloud.logging.Client()
 cloud_logging_client.setup_logging()
 
-load_dotenv()
+_, project_id = google.auth.default()
+os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
+os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
+os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
-model_name = os.getenv("MODEL")
+model_name = "gemini-2.5-flash"
+public_url = "https://researcher.demo-33.com"
 print(model_name)
 
 # Tools
-
 
 def append_to_state(
     tool_context: ToolContext, field: str, response: str
@@ -103,4 +104,4 @@ researcher_agent_card = AgentCard(
     defaultOutputModes=["text/plain"]
 )
 
-a2a_app = to_a2a(root_agent, agent_card=researcher_agent_card)
+app = to_a2a(root_agent, agent_card=researcher_agent_card)

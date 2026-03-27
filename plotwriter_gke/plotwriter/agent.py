@@ -6,35 +6,36 @@ their collaboration using the ADK's SequentialAgent pattern.
 import os
 import logging
 import google.cloud.logging
+import google.auth
 
-from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
+import datetime
+from zoneinfo import ZoneInfo
+
+from google.adk.agents import Agent
+from google.adk.apps import App
+from google.adk.models import Gemini
+from google.genai import types
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
-from google.adk.a2a.utils.agent_to_a2a import to_a2a
+from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
 from a2a.types import AgentCard
-from callback_logging import log_query_to_model, log_model_response
-from dotenv import load_dotenv
-
-from google.adk import Agent
+from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.adk.agents import SequentialAgent, LoopAgent, ParallelAgent
 from google.adk.tools.tool_context import ToolContext
 from google.genai import types
 
 
+
 cloud_logging_client = google.cloud.logging.Client()
 cloud_logging_client.setup_logging()
 
-load_dotenv()
+_, project_id = google.auth.default()
+os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
+os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
+os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
-model_name = os.getenv("MODEL")
+model_name = "gemini-2.5-flash"
+public_url = "https://plotwriter.demo-33.com"
 print(model_name)
-
-# Read the public IP from the file created by the init container.
-try:
-    with open('/ip/public_ip', 'r') as f:
-        public_ip = f.read().strip()
-    public_url = f"http://{public_ip}"
-except FileNotFoundError:
-    public_url = "http://localhost:8080" # Fallback for local development
 
 # Tools
 def append_to_state(
@@ -128,13 +129,13 @@ wiki_researcher = RemoteA2aAgent(
     agent_card=
     (
         # ToDo: Implement Agent Registry and replace hard-coding
-        f"http://136.112.90.99:80{AGENT_CARD_WELL_KNOWN_PATH}"        
+        f"http://34.44.59.153:80{AGENT_CARD_WELL_KNOWN_PATH}"        
     ),
 )
 
 film_concept_team = SequentialAgent(
     name="film_concept_team",
-    description="Write a film plot outline and save it as a text file.",
+    description="Write a film plot outline, output it into a nice format and then save it as a text file.",
     sub_agents=[
         wiki_researcher,
         screenwriter,
@@ -170,4 +171,4 @@ plotwriter_agent_card = AgentCard(
     defaultOutputModes=["text/plain"]
 )
 
-a2a_app = to_a2a(root_agent, agent_card=plotwriter_agent_card)
+app = to_a2a(root_agent, agent_card=plotwriter_agent_card)
