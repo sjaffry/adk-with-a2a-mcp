@@ -3,7 +3,7 @@
 # agent web server.
 
 # Use an official lightweight Python image as the base
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -18,6 +18,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all application code into the container
 COPY . .
 
+# Create the directory where the agent will write files at runtime
+# The -p flag ensures the command doesn't fail if the directory already exists
+RUN mkdir -p movie_pitches
+
 # Change ownership of EVERYTHING in /app to the non-root user
 # Without this, the running agent would be denied permission to write files.
 RUN chown -R myuser:myuser /app
@@ -29,8 +33,4 @@ USER myuser
 ENV PATH="/home/myuser/.local/bin:$PATH"
 
 # Define the command to run when the container starts
-# CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
-# CMD ["adk", "api_server", "--a2a", "--host", "0.0.0.0", "--port", "8080", "wiki_researcher"]
-# Start the remote agent using uvicorn
-CMD ["uvicorn", "wiki_researcher.agent:a2a_app", "--host", "0.0.0.0", "--port", "8080"]
-
+CMD ["uvicorn", "movie_plotwriter.agent:app", "--host", "0.0.0.0", "--port", "8080"]

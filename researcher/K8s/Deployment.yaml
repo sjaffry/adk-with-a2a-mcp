@@ -4,44 +4,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: plotwriter-agent
+  name: researcher-agent
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: plotwriter-agent
+      app: researcher-agent
   template:
     metadata:
       labels:
-        app: plotwriter-agent
+        app: researcher-agent
     spec:
       # Assign the Kubernetes Service Account for Workload Identity
-      serviceAccountName: plotwriter-agent-sa
-      # This init container runs before the main app container.
-      # It discovers the LoadBalancer IP and writes it to a shared volume.
-      initContainers:
-      - name: init-discover-ip
-        image: bitnami/kubectl:latest
-        command:
-        - /bin/sh
-        - -c
-        - |
-            echo "Waiting for external IP..."
-            IP=""
-            while [ -z "$IP" ]; do
-              IP=$(kubectl get service plotwriter-agent -n default -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-              [ -z "$IP" ] && echo "Still waiting..." && sleep 5
-            done
-            echo "Found IP: $IP"
-            echo -n "$IP" > /ip/public_ip
-        volumeMounts:
-        - name: ip-volume
-          mountPath: /ip
+      serviceAccountName: researcher-agent-sa
       containers:
-      - name: plotwriter-agent
+      - name: researcher-agent
         imagePullPolicy: Always
         # The path to the container image in Artifact Registry
-        image: us-central1-docker.pkg.dev/gcp-onboarding-project-480819/adk-repo/plotwriter-agent:latest
+        image: us-central1-docker.pkg.dev/gcp-onboarding-project-480819/adk-repo/researcher-agent:latest
         # Define the resources for GKE Autopilot to provision
         resources:
           limits:
@@ -69,6 +49,8 @@ spec:
           value: "true"
         - name: MODEL
           value: "gemini-2.5-flash"
+        - name: APP_URL
+          value: "https://researcher.demo-33.com"
       volumes:
       - name: ip-volume
         emptyDir: {}
@@ -76,7 +58,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: plotwriter-agent
+  name: researcher-agent
 spec:
   # Create a public-facing Network Load Balancer with an external IP
   type: LoadBalancer
@@ -84,26 +66,4 @@ spec:
   - port: 80
     targetPort: 8080
   selector:
-    app: plotwriter-agent
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: plotwriter-agent-service-reader
-rules:
-- apiGroups: [""]
-  resources: ["services"]
-  verbs: ["get"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: plotwriter-agent-read-service
-subjects:
-- kind: ServiceAccount
-  name: plotwriter-agent-sa
-  namespace: default
-roleRef:
-  kind: Role
-  name: plotwriter-agent-service-reader
-  apiGroup: rbac.authorization.k8s.io
+    app: researcher-agent

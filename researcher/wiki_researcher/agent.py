@@ -36,7 +36,7 @@ os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
 model_name = "gemini-2.5-flash"
-public_url = "https://researcher.demo-33.com"
+public_url = os.environ.get("APP_URL", "https://researcher.demo-33.com")
 print(model_name)
 
 # Tools
