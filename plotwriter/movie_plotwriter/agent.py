@@ -26,17 +26,12 @@ from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
 
-
 cloud_logging_client = google.cloud.logging.Client()
 cloud_logging_client.setup_logging()
 
-_, project_id = google.auth.default()
-os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
-os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
-os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
-model_name = "gemini-2.5-flash"
-public_url = os.environ.get("APP_URL", "https://demo-33.com/plotwriter")
+model_name = os.environ.get('MODEL', 'gemini-2.5-flash')
+public_url = os.environ.get('PLOTWRITER_API_URL', 'http://localhost:8000')
 print(model_name)
 
 # Tools
@@ -130,8 +125,7 @@ wiki_researcher = RemoteA2aAgent(
     description="Agent that uses wikipedia to research answers to questions",
     agent_card=
     (
-        # ToDo: Implement Agent Registry and replace hard-coding
-        f"http://34.123.37.125:80{AGENT_CARD_WELL_KNOWN_PATH}"        
+        f"https://demo-33.com/researcher/{AGENT_CARD_WELL_KNOWN_PATH}"        
     ),
 )
 
@@ -146,7 +140,7 @@ film_concept_team = SequentialAgent(
 )
 
 root_agent = Agent(
-    name="greeter",
+    name="plotwriter",
     model=model_name,
     description="Guides the user in crafting a movie plot.",
     instruction="""

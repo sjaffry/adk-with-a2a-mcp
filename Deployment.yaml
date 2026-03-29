@@ -21,7 +21,7 @@ spec:
       - name: plotwriter-agent
         imagePullPolicy: Always
         # The path to the container image in Artifact Registry
-        image: us-central1-docker.pkg.dev/gcp-onboarding-project-480819/adk-repo/plotwriter-agent:latest
+        image: ${PLOTWRITER_IMAGE}
         # Define the resources for GKE Autopilot to provision
         resources:
           limits:
@@ -43,19 +43,9 @@ spec:
         - name: ip-volume
           mountPath: /ip
         # Environment variables passed to the application
-        env:
-        - name: PORT
-          value: "8080"
-        - name: GOOGLE_CLOUD_PROJECT
-          value: "gcp-onboarding-project-480819"
-        - name: GOOGLE_CLOUD_LOCATION
-          value: "us-central1"
-        - name: GOOGLE_GENAI_USE_VERTEXAI
-          value: "true"
-        - name: MODEL
-          value: "gemini-2.5-flash"
-        - name: APP_URL
-          value: "https://demo-33.com/plotwriter"
+        envFrom:
+        - configMapRef: 
+            name: agent-config
       volumes:
       - name: ip-volume
         emptyDir: {}
@@ -93,7 +83,7 @@ spec:
       - name: researcher-agent
         imagePullPolicy: Always
         # The path to the container image in Artifact Registry
-        image: us-central1-docker.pkg.dev/gcp-onboarding-project-480819/adk-repo/researcher-agent:latest
+        image: ${RESEARCHER_IMAGE}
         # Define the resources for GKE Autopilot to provision
         resources:
           limits:
@@ -110,19 +100,9 @@ spec:
         - name: ip-volume
           mountPath: /ip
         # Environment variables passed to the application
-        env:
-        - name: PORT
-          value: "8080"
-        - name: GOOGLE_CLOUD_PROJECT
-          value: "gcp-onboarding-project-480819"
-        - name: GOOGLE_CLOUD_LOCATION
-          value: "us-central1"
-        - name: GOOGLE_GENAI_USE_VERTEXAI
-          value: "true"
-        - name: MODEL
-          value: "gemini-2.5-flash"
-        - name: APP_URL
-          value: "https://demo-33.com/researcher"
+        envFrom:
+        - configMapRef: 
+            name: agent-config
       volumes:
       - name: ip-volume
         emptyDir: {}
@@ -145,13 +125,13 @@ kind: Gateway
 metadata:
   name: adk-agent-gateway
   annotations:
-    networking.gke.io/certmap: "demo33-cert-map"
+    networking.gke.io/certmap: ${CERT_MAP_NAME}
 spec:
   # Create an external Application Load Balancer
   gatewayClassName: gke-l7-global-external-managed
   addresses:
   - type: NamedAddress
-    value: my-external-static-ip
+    value: ${STATIC_IP_NAME}
   listeners:
   - name: http
     protocol: HTTP

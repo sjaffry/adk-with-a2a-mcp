@@ -32,13 +32,9 @@ from starlette.responses import PlainTextResponse
 cloud_logging_client = google.cloud.logging.Client()
 cloud_logging_client.setup_logging()
 
-_, project_id = google.auth.default()
-os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
-os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
-os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
-model_name = "gemini-2.5-flash"
-public_url = os.environ.get("APP_URL", "https://demo-33.com/researcher")
+model_name = os.environ.get('MODEL', 'gemini-2.5-flash')
+public_url = os.environ.get('RESEARCHER_API_URL', 'http://localhost:8000')
 print(model_name)
 
 # Tools
