@@ -22,6 +22,8 @@ from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.adk.agents import SequentialAgent, LoopAgent, ParallelAgent
 from google.adk.tools.tool_context import ToolContext
 from google.genai import types
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 
 
 
@@ -34,7 +36,7 @@ os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
 model_name = "gemini-2.5-flash"
-public_url = os.environ.get("APP_URL", "https://researcher.demo-33.com")
+public_url = os.environ.get("APP_URL", "https://demo-33.com/plotwriter")
 print(model_name)
 
 # Tools
@@ -129,7 +131,7 @@ wiki_researcher = RemoteA2aAgent(
     agent_card=
     (
         # ToDo: Implement Agent Registry and replace hard-coding
-        f"http://34.44.59.153:80{AGENT_CARD_WELL_KNOWN_PATH}"        
+        f"http://34.123.37.125:80{AGENT_CARD_WELL_KNOWN_PATH}"        
     ),
 )
 
@@ -172,3 +174,8 @@ plotwriter_agent_card = AgentCard(
 )
 
 app = to_a2a(root_agent, agent_card=plotwriter_agent_card)
+
+async def health_check(request: Request) -> PlainTextResponse:
+    return PlainTextResponse("Agent is healthy and running!")
+
+app.add_route("/", health_check, methods=["GET"])

@@ -25,6 +25,8 @@ from google.genai import types
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
 from google.adk.tools.langchain_tool import LangchainTool
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 
 
 cloud_logging_client = google.cloud.logging.Client()
@@ -36,7 +38,7 @@ os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
 model_name = "gemini-2.5-flash"
-public_url = os.environ.get("APP_URL", "https://researcher.demo-33.com")
+public_url = os.environ.get("APP_URL", "https://demo-33.com/researcher")
 print(model_name)
 
 # Tools
@@ -105,3 +107,8 @@ researcher_agent_card = AgentCard(
 )
 
 app = to_a2a(root_agent, agent_card=researcher_agent_card)
+
+async def health_check(request: Request) -> PlainTextResponse:
+    return PlainTextResponse("Agent is healthy and running!")
+
+app.add_route("/", health_check, methods=["GET"])

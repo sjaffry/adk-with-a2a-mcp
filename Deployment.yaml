@@ -1,0 +1,196 @@
+# Defines the Kubernetes resources required to deploy the application to GKE. 
+# Includes the Deployment (to run the container pods) and the Service 
+# (to expose the application via a Load Balancer).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plotwriter-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plotwriter-agent
+  template:
+    metadata:
+      labels:
+        app: plotwriter-agent
+    spec:
+      # Assign the Kubernetes Service Account for Workload Identity
+      serviceAccountName: plotwriter-agent-sa
+      containers:
+      - name: plotwriter-agent
+        imagePullPolicy: Always
+        # The path to the container image in Artifact Registry
+        image: us-central1-docker.pkg.dev/gcp-onboarding-project-480819/adk-repo/plotwriter-agent:latest
+        # Define the resources for GKE Autopilot to provision
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+            ephemeral-storage: "512Mi"
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+            ephemeral-storage: "512Mi"
+        ports:
+        - containerPort: 8080
+        # The Gateway load balancer uses this to configure its health check
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+        volumeMounts:
+        - name: ip-volume
+          mountPath: /ip
+        # Environment variables passed to the application
+        env:
+        - name: PORT
+          value: "8080"
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "gcp-onboarding-project-480819"
+        - name: GOOGLE_CLOUD_LOCATION
+          value: "us-central1"
+        - name: GOOGLE_GENAI_USE_VERTEXAI
+          value: "true"
+        - name: MODEL
+          value: "gemini-2.5-flash"
+        - name: APP_URL
+          value: "https://demo-33.com/plotwriter"
+      volumes:
+      - name: ip-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plotwriter-agent
+spec:
+  # Internal service to route traffic from the Gateway
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: plotwriter-agent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: researcher-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: researcher-agent
+  template:
+    metadata:
+      labels:
+        app: researcher-agent
+    spec:
+      # Assign the Kubernetes Service Account for Workload Identity
+      serviceAccountName: researcher-agent-sa
+      containers:
+      - name: researcher-agent
+        imagePullPolicy: Always
+        # The path to the container image in Artifact Registry
+        image: us-central1-docker.pkg.dev/gcp-onboarding-project-480819/adk-repo/researcher-agent:latest
+        # Define the resources for GKE Autopilot to provision
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+            ephemeral-storage: "512Mi"
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+            ephemeral-storage: "512Mi"
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: ip-volume
+          mountPath: /ip
+        # Environment variables passed to the application
+        env:
+        - name: PORT
+          value: "8080"
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "gcp-onboarding-project-480819"
+        - name: GOOGLE_CLOUD_LOCATION
+          value: "us-central1"
+        - name: GOOGLE_GENAI_USE_VERTEXAI
+          value: "true"
+        - name: MODEL
+          value: "gemini-2.5-flash"
+        - name: APP_URL
+          value: "https://demo-33.com/researcher"
+      volumes:
+      - name: ip-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: researcher-agent
+spec:
+  # Internal service to route traffic from the Gateway
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: researcher-agent
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: adk-agent-gateway
+  annotations:
+    networking.gke.io/certmap: "demo33-cert-map"
+spec:
+  # Create an external Application Load Balancer
+  gatewayClassName: gke-l7-global-external-managed
+  addresses:
+  - type: NamedAddress
+    value: my-external-static-ip
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+  - name: https
+    protocol: HTTPS
+    port: 443
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-routes
+spec:
+  parentRefs:
+  - name: adk-agent-gateway
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /plotwriter
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: plotwriter-agent
+      port: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /researcher
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: researcher-agent
+      port: 80
