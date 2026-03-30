@@ -1,6 +1,9 @@
 # Description
 AI Agents built with ADK with A2A. The Plotwriter agent is an orchestrator of 4 sub agents, one of which is a remote A2A capable agent. Plotwriter creates a movie plot from user input on a historical figure. The remote A2A agent is the wiki researcher that performs wikipedia searches on the topic and returns results to Plotwriter. All other sub agents are locally integrated within Plotwriter agent.py code.
 
+![Plotwriter](images/Plotwriter-agent.png)
+
+
 # Deployemnt
 These agents can be deloyed on both Agent Engine or GKE
 
