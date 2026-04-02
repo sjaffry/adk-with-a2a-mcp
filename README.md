@@ -68,6 +68,6 @@ export RESEARCHER_IMAGE="[YOUR-REGION]-docker.pkg.dev/[YOUR PROJECT ID]/[YOUR RE
 export STATIC_IP_NAME="[YOUR STATIC IP NAME]"
 export CERT_MAP_NAME="[YOUR CERT MAP NAME]"
 
-nvsubst < Deployment.yaml | kubectl apply -f -
+envsubst < Deployment.yaml | kubectl apply -f -
 
 ```
