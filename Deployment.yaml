@@ -5,6 +5,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: plotwriter-agent
+  annotations:
+    # This annotation triggers automatic registration in Google Agent Registry
+    apphub.cloud.google.com/functional-type: AGENT
 spec:
   replicas: 1
   selector:
@@ -14,6 +17,9 @@ spec:
     metadata:
       labels:
         app: plotwriter-agent
+      annotations:
+        # This annotation triggers automatic registration in Google Agent Registry
+        apphub.cloud.google.com/functional-type: AGENT
     spec:
       # Assign the Kubernetes Service Account for Workload Identity
       serviceAccountName: plotwriter-agent-sa
@@ -67,6 +73,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: researcher-agent
+  annotations:
+    # This annotation triggers automatic registration in Google Agent Registry
+    apphub.cloud.google.com/functional-type: AGENT
 spec:
   replicas: 1
   selector:
@@ -76,6 +85,9 @@ spec:
     metadata:
       labels:
         app: researcher-agent
+      annotations:
+        # This annotation triggers automatic registration in Google Agent Registry
+        apphub.cloud.google.com/functional-type: AGENT
     spec:
       # Assign the Kubernetes Service Account for Workload Identity
       serviceAccountName: researcher-agent-sa
