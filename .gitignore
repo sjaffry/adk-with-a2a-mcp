@@ -1,4 +1,7 @@
 plotwriter/movie_plotwriter/.adk
 plotwriter/movie_plotwriter/__pycache__
 plotwriter/movie_pitches
-certificate-map.sh
+plotwriter/movie_plotwriter/build.sh
+researcher/wiki_researcher/build.sh
+researcher/wiki_researcher/__pycache__
+researcher/wiki_researcher/.adk
