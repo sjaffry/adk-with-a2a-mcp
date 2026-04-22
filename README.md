@@ -25,7 +25,9 @@ adk deploy agent_engine --project [YOUR PROJECT NAME] --region [REGION] wiki_res
 ### Pre-requisits
 1. Ensure you have setup an Artifact Registry and created a repository to store the container images.
 
-2. The Deployment.yaml creates a Gateway API that serves traffic on ports 80 and 443. As such, it expects a certificate to be pre-existing along with a registered domain in cloud DNS that is linked to the certificate and an external static IP. For this demo to work in your environment, create/register your own domain and certificate and update Deployment.yaml 
+2. Ensure you have created a RAG corpus in Vertex AI.
+
+3. The Deployment.yaml creates a Gateway API that serves traffic on ports 80 and 443. As such, it expects a certificate to be pre-existing along with a registered domain in cloud DNS that is linked to the certificate and an external static IP. For this demo to work in your environment, create/register your own domain and certificate and update Deployment.yaml 
 
 ### Build & push container images
 ```bash
@@ -41,6 +43,11 @@ docker build --platform linux/amd64 -t [REGION]-docker.pkg.dev/[GCP-PROJECT-ID]/
 
 docker push [REGION]-docker.pkg.dev/[GCP-PROJECT-ID]/[REPO-NAME]/plotwriter-agent:latest
 
+cd mcp-server
+
+docker build --platform linux/amd64 -t [REGION]-docker.pkg.dev/[GCP-PROJECT-ID]/[REPO-NAME]/mcp-server-movie-db:latest .
+
+docker push [REGION]-docker.pkg.dev/[GCP-PROJECT-ID]/[REPO-NAME]/mcp-server-movie-db:latest
 ```
 
 ### Create Kubernetes service accounts
@@ -49,6 +56,14 @@ These script create a service account for each agent and bind it to the AI Platf
 ```bash
 ./plotwriter/K8s/create-service-account.sh
 ./researcher/K8s/create-service-account.sh
+./mcp-server/K8s/create-service-account.sh
+```
+
+### Create static IP address
+You'll need a static IP address for the load balancer so that it can be referenced in the ADK agent cards when you're not using your own domain and cert, otherwise configured in Cloud DNS as an A record for your domain. You can create one using the following command:
+
+```bash
+gcloud compute addresses create [IP_ADDRESS_NAME] --global
 ```
 
 ### Create Kubernetes config map for env variables for agents
@@ -56,11 +71,13 @@ These script create a service account for each agent and bind it to the AI Platf
 kubectl create configmap agent-config \
   --from-literal=PORT=8080 \
   --from-literal=GOOGLE_CLOUD_PROJECT="YOUR PROJECT ID" \
-  --from-literal=PLOTWRITER_API_URL="https://[YOUR DOMAIN]/plotwriter" \
-  --from-literal=RESEARCHER_API_URL="https://[YOUR DOMAIN]/researcher" \
+  --from-literal=PLOTWRITER_URL="http://[YOUR_DOMAIN]/plotwriter" \
+  --from-literal=RESEARCHER_URL="http://[YOUR_DOMAIN]/researcher" \
+  --from-literal=MOVIE_DB_MCP_URL="http://[YOUR_DOMAIN]/movie-db-mcp" \
   --from-literal=GOOGLE_CLOUD_LOCATION="YOUR REGION" \
   --from-literal=GOOGLE_GENAI_USE_VERTEXAI="true" \
   --from-literal=MODEL="gemini-2.5-flash"
+  --from-literal=CORPUS_NAME="projects/[YOUR PROJECT ID]/locations/[YOUR REGION]/ragCorpora/[YOUR CORPUS ID]"
 ```
 
 ### Deploy to GKE 
@@ -69,9 +86,14 @@ kubectl create configmap agent-config \
 # 1. Export the environment variables
 export PLOTWRITER_IMAGE="[YOUR-REGION]-docker.pkg.dev/[YOUR PROJECT ID]/[YOUR REPO]/plotwriter-agent:latest"
 export RESEARCHER_IMAGE="[YOUR-REGION]-docker.pkg.dev/[YOUR PROJECT ID]/[YOUR REPO]/researcher-agent:latest"
+export MCP_SERVER_IMAGE="[YOUR-REGION]-docker.pkg.dev/[YOUR PROJECT ID]/[YOUR REPO]/mcp-server-movie-db:latest"
 export STATIC_IP_NAME="[YOUR STATIC IP NAME]"
 export CERT_MAP_NAME="[YOUR CERT MAP NAME]"
 
+# Use this Deployment file if you're using just a static IP with connection on port 80 only
 envsubst < Deployment.yaml | kubectl apply -f -
+
+# Use this Deployment file if you're using your own domain and cert with connections on port 443 
+envsubst < Deployment-with-cert.yaml | kubectl apply -f -
 
 ```
