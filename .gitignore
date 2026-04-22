@@ -9,4 +9,4 @@ researcher/wiki_researcher/__pycache__
 researcher/wiki_researcher/.adk
 mcp-server/__pycache__
 mcp-server/.adk
-certificate-map.sh
+create-certmap.sh

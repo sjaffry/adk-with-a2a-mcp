@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(format="[%(levelname)s]: %(message)s", level=logging.INFO)
 
 
-PROJECT_ID = os.environ.get('PROJECT_ID', None)
-LOCATION = os.environ.get('LOCATION', None)
+PROJECT_ID = os.environ.get('GOOGLE_CLOUD_PROJECT', None)
+LOCATION = os.environ.get('GOOGLE_CLOUD_LOCATION', None)
 CORPUS_NAME = os.environ.get('CORPUS_NAME', None)
 
 if not PROJECT_ID or not LOCATION or not CORPUS_NAME:
@@ -35,8 +35,8 @@ def store_movie_in_vector_db(
     
     """Use this to store a movie plot in the vector database.
     Args:
-        Title: The title of the movie.
-        Logline: The logline of the movie to store in the vector database.
+        title: The title of the movie.
+        logline: The logline of the movie to store in the vector database.
     Returns:
         A dictionary containing the movie title and a success message, or an error message if the request fails.
     """

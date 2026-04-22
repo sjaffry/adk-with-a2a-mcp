@@ -9,5 +9,6 @@ dependencies = [
     "pydantic",
     "httpx",
     "starlette",
-    "google-cloud-aiplatform",
+    "google-cloud-aiplatform>=1.64.0",
+    "uvicorn",
 ]
